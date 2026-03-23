@@ -12,6 +12,14 @@ permissions:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      sdk--release_created: ${{ steps.release.outputs['sdk--release_created'] }}
+      sdk--tag_name: ${{ steps.release.outputs['sdk--tag_name'] }}
+      toolkit--release_created: ${{ steps.release.outputs['toolkit--release_created'] }}
+      toolkit--tag_name: ${{ steps.release.outputs['toolkit--tag_name'] }}
+      deep_research--release_created: ${{ steps.release.outputs['tool_packages/deep_research--release_created'] }}
+      deep_research--tag_name: ${{ steps.release.outputs['tool_packages/deep_research--tag_name'] }}
     steps:
       - uses: googleapis/release-please-action@v4
         id: release
@@ -19,3 +27,40 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  create-release-branches:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create release branch for sdk
+        if: ${{ needs.release-please.outputs['sdk--release_created'] == 'true' }}
+        run: |
+          TAG="${{ needs.release-please.outputs['sdk--tag_name'] }}"
+          BRANCH="release/${TAG}"
+          git checkout -b "$BRANCH" "$TAG"
+          git push origin "$BRANCH"
+          echo "Created release branch: $BRANCH"
+
+      - name: Create release branch for toolkit
+        if: ${{ needs.release-please.outputs['toolkit--release_created'] == 'true' }}
+        run: |
+          TAG="${{ needs.release-please.outputs['toolkit--tag_name'] }}"
+          BRANCH="release/${TAG}"
+          git checkout -b "$BRANCH" "$TAG"
+          git push origin "$BRANCH"
+          echo "Created release branch: $BRANCH"
+
+      - name: Create release branch for deep_research
+        if: ${{ needs.release-please.outputs['deep_research--release_created'] == 'true' }}
+        run: |
+          TAG="${{ needs.release-please.outputs['deep_research--tag_name'] }}"
+          BRANCH="release/${TAG}"
+          git checkout -b "$BRANCH" "$TAG"
+          git push origin "$BRANCH"
+          echo "Created release branch: $BRANCH"
