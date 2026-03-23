@@ -1,0 +1,63 @@
+name: Publish to TestPyPI
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  detect-package:
+    runs-on: ubuntu-latest
+    outputs:
+      package_dir: ${{ steps.detect.outputs.package_dir }}
+      package_name: ${{ steps.detect.outputs.package_name }}
+    steps:
+      - name: Detect package from release tag
+        id: detect
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          echo "Processing release tag: $TAG"
+
+          if [[ "$TAG" == rp-test-sdk-v* ]]; then
+            echo "package_dir=sdk" >> $GITHUB_OUTPUT
+            echo "package_name=rp-test-sdk" >> $GITHUB_OUTPUT
+          elif [[ "$TAG" == rp-test-toolkit-v* ]]; then
+            echo "package_dir=toolkit" >> $GITHUB_OUTPUT
+            echo "package_name=rp-test-toolkit" >> $GITHUB_OUTPUT
+          elif [[ "$TAG" == rp-test-deep-research-v* ]]; then
+            echo "package_dir=tool_packages/deep_research" >> $GITHUB_OUTPUT
+            echo "package_name=rp-test-deep-research" >> $GITHUB_OUTPUT
+          else
+            echo "Unknown release tag: $TAG"
+            exit 1
+          fi
+
+  publish:
+    needs: detect-package
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+      - name: Build package
+        working-directory: ${{ needs.detect-package.outputs.package_dir }}
+        env:
+          UV_NO_SOURCES: 1
+        run: uv build
+
+      - name: Publish to TestPyPI
+        working-directory: ${{ needs.detect-package.outputs.package_dir }}
+        run: |
+          uv publish \
+            --publish-url https://test.pypi.org/legacy/ \
+            --username __token__ \
+            --password "${{ secrets.TEST_PYPI_TOKEN }}"

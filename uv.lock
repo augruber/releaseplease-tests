@@ -1,0 +1,43 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[manifest]
+members = [
+    "releaseplease-tests",
+    "rp-test-deep-research",
+    "rp-test-sdk",
+    "rp-test-toolkit",
+]
+
+[[package]]
+name = "releaseplease-tests"
+version = "0.0.0"
+source = { virtual = "." }
+
+[[package]]
+name = "rp-test-deep-research"
+version = "0.1.0"
+source = { editable = "tool_packages/deep_research" }
+dependencies = [
+    { name = "rp-test-toolkit" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "rp-test-toolkit", editable = "toolkit" }]
+
+[[package]]
+name = "rp-test-sdk"
+version = "0.1.0"
+source = { editable = "sdk" }
+
+[[package]]
+name = "rp-test-toolkit"
+version = "0.1.0"
+source = { editable = "toolkit" }
+dependencies = [
+    { name = "rp-test-sdk" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "rp-test-sdk", editable = "sdk" }]
