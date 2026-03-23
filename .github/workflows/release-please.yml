@@ -65,15 +65,3 @@ jobs:
           git checkout -b "$BRANCH" "$TAG"
           git push origin "$BRANCH"
           echo "Created release branch: $BRANCH"
-
-      - name: Open sync PR main -> dev
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr create \
-            --repo ${{ github.repository }} \
-            --base dev \
-            --head main \
-            --title "chore: sync main to dev after release" \
-            --body "Automated PR to bring version bump commits from main back into dev after a release." \
-          || echo "Sync PR already open or no diff — skipping."
